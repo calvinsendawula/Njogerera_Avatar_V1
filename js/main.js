@@ -27,22 +27,67 @@ let objToRender = 'human';
 const loader = new GLTFLoader();
 
 //Load the file
+// loader.load(
+//   `models/${objToRender}/scene.glb`,
+//   function (gltf) {
+//     //If the file is loaded, add it to the scene
+//     object = gltf.scene;
+//     scene.add(object);
+//   },
+//   function (xhr) {
+//     //While it is loading, log the progress
+//     console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+//   },
+//   function (error) {
+//     //If there is an error, log it
+//     console.error(error);
+//   }
+// );
+
 loader.load(
   `models/${objToRender}/scene.glb`,
   function (gltf) {
-    //If the file is loaded, add it to the scene
-    object = gltf.scene;
-    scene.add(object);
+    // If the file is loaded, add it to the scene
+    const loadedModel = gltf.scene;
+
+    // Find the armature in the loaded model hierarchy
+    const armature = findArmature(loadedModel);
+
+    if (armature) {
+      // You have found the armature, and you can proceed with animation setup.
+      // Continue with the animation setup using the armature reference.
+
+      // Add the loaded model to the scene
+      scene.add(loadedModel);
+    } else {
+      console.error("Armature not found in the loaded model.");
+    }
   },
   function (xhr) {
-    //While it is loading, log the progress
+    // While it is loading, log the progress
     console.log((xhr.loaded / xhr.total * 100) + '% loaded');
   },
   function (error) {
-    //If there is an error, log it
+    // If there is an error, log it
     console.error(error);
   }
 );
+
+// Recursive function to find the armature
+function findArmature(node) {
+  if (node.isBone) {
+    return node; // Return the bone if it's a bone node
+  }
+
+  for (const child of node.children) {
+    const result = findArmature(child);
+    if (result) {
+      return result; // Return the armature if found in a child node
+    }
+  }
+
+  return null; // Armature not found in this branch
+}
 
 //Instantiate a new renderer and set its size
 const renderer = new THREE.WebGLRenderer({ alpha: true }); //Alpha: true allows for the transparent background
@@ -68,6 +113,17 @@ scene.add(ambientLight);
 //This adds controls to the camera, so we can rotate / zoom it with the mouse
 if (objToRender === "human") {
   controls = new OrbitControls(camera, renderer.domElement);
+  // Assuming you've loaded your avatar and have a reference to the armature
+  const armature = avatar.getObjectByName('Armature'); // Replace 'Armature' with the actual name
+
+  // Find a specific bone by name
+  const boneName = 'RightForeArm'; // Replace with the actual bone name
+  const bone = armature.getObjectByName(boneName, true); // Use the recursive flag to search nested bones
+
+  // Manipulate the bone's rotation or position
+  bone.rotation.x = Math.PI / 4; // Rotate the bone
+  bone.position.set(0, 0, 1); // Translate the bone
+
 }
 
 //Render the scene
